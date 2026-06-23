@@ -66,7 +66,8 @@ export default defineConfig({
 
 	experimental: {
 		rustCompiler: false,
-		queuedRendering: { enabled: true },
+		// queuedRendering disabled — interacts badly with request-scoped runtime context
+		// queuedRendering: { enabled: true },
 	},
 
 	integrations: [

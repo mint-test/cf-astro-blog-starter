@@ -5,9 +5,15 @@ import { getCategoryUrl } from "@utils/url-utils";
 
 // // Retrieve posts and sort them by publication date
 async function getRawSortedPosts() {
-	const allBlogPosts = await getCollection("posts", ({ data }) => {
-		return import.meta.env.PROD ? data.draft !== true : true;
-	});
+	let allBlogPosts;
+	try {
+		allBlogPosts = await getCollection("posts", ({ data }) => {
+			return import.meta.env.PROD ? data.draft !== true : true;
+		});
+	} catch (err) {
+		console.error("Failed to load posts collection:", err);
+		return [];
+	}
 
 	const sorted = allBlogPosts.sort((a, b) => {
 		// 首先按置顶状态排序，置顶文章在前
@@ -57,9 +63,15 @@ export type Tag = {
 };
 
 export async function getTagList(): Promise<Tag[]> {
-	const allBlogPosts = await getCollection<"posts">("posts", ({ data }) => {
-		return import.meta.env.PROD ? data.draft !== true : true;
-	});
+	let allBlogPosts;
+	try {
+		allBlogPosts = await getCollection<"posts">("posts", ({ data }) => {
+			return import.meta.env.PROD ? data.draft !== true : true;
+		});
+	} catch (err) {
+		console.error("Failed to load posts for tag list:", err);
+		return [];
+	}
 
 	const countMap: { [key: string]: number } = {};
 	allBlogPosts.forEach((post: { data: { tags: string[] } }) => {
@@ -84,9 +96,15 @@ export type Category = {
 };
 
 export async function getCategoryList(): Promise<Category[]> {
-	const allBlogPosts = await getCollection<"posts">("posts", ({ data }) => {
-		return import.meta.env.PROD ? data.draft !== true : true;
-	});
+	let allBlogPosts;
+	try {
+		allBlogPosts = await getCollection<"posts">("posts", ({ data }) => {
+			return import.meta.env.PROD ? data.draft !== true : true;
+		});
+	} catch (err) {
+		console.error("Failed to load posts for category list:", err);
+		return [];
+	}
 	const count: { [key: string]: number } = {};
 	allBlogPosts.forEach((post: { data: { category: string | null } }) => {
 		if (!post.data.category) {
@@ -160,9 +178,15 @@ export async function getRelatedPosts(
 	currentPost: CollectionEntry<"posts">,
 	maxCount = 5,
 ): Promise<PostForList[]> {
-	const allPosts = await getCollection<"posts">("posts", ({ data }) => {
-		return import.meta.env.PROD ? data.draft !== true : true;
-	});
+	let allPosts;
+	try {
+		allPosts = await getCollection<"posts">("posts", ({ data }) => {
+			return import.meta.env.PROD ? data.draft !== true : true;
+		});
+	} catch (err) {
+		console.error("Failed to load posts for related posts:", err);
+		return [];
+	}
 
 	// 排除自身和加密文章
 	const candidates = allPosts.filter(
