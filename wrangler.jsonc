@@ -17,7 +17,7 @@
 		{
 			"binding": "DB",
 			"database_name": "blog-db",
-			"database_id": "2a5589b4-804d-4040-88ec-eced109424cd",
+			"database_id": "fb7d3b8c-b580-4cda-9c58-58e010b8f9b5",
 			"migrations_dir": "drizzle"
 		}
 	],
@@ -32,7 +32,7 @@
 	"kv_namespaces": [
 		{
 			"binding": "SESSION",
-			"id": "bb70351f712442b58ebdcbbceae94c69"
+			"id": "1aad1ebbcd6445869057a280650e48df"
 		}
 	],
 

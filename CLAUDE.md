@@ -76,3 +76,10 @@
 ### 测试
 
 使用 `bun:test`（Bun 内置的测试运行器——无需 Jest/Vitest 配置）。测试文件位于 `tests/unit/` 和 `tests/integration/`。集成测试使用 `app.request()` 直接测试 Hono 端点（无需启动 HTTP 服务器）。Bun 会自动发现测试文件。
+
+
+
+
+
+
+
