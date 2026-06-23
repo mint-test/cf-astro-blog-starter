@@ -27,10 +27,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
 			[
 				"default-src 'self'",
 				"script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com",
-				"style-src 'self' 'unsafe-inline'",
-				"img-src 'self' data: blob:",
-				"font-src 'self'",
-				"connect-src 'self'",
+				"style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+				"img-src 'self' data: blob: https:",
+				"font-src 'self' https://fonts.gstatic.com",
+				"connect-src 'self' https:",
 				"frame-src https://challenges.cloudflare.com",
 			].join("; "),
 		);
