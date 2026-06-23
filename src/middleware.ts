@@ -1,15 +1,12 @@
 import { defineMiddleware } from "astro:middleware";
-import { clearRuntimeEnv, setRuntimeEnv } from "@/lib/runtime-context";
+import { clearRuntimeEnv } from "@/lib/runtime-context";
 
 export const onRequest = defineMiddleware(async (context, next) => {
-	// Reset any stale env from a previous request on the same isolate
+	// Reset env cache per request, ensuring fresh bindings each time
 	clearRuntimeEnv();
 
-	// Propagate Cloudflare runtime environment so the D1 content loader
-	// can access platform bindings (DB, R2, KV)
-	if (context.locals?.runtime?.env) {
-		setRuntimeEnv(context.locals.runtime.env);
-	}
+	// Astro 6: env bindings are accessed via `import { env } from "cloudflare:workers"`,
+	// not via context.locals.runtime.env (removed in @astrojs/cloudflare v13).
 
 	const response = await next();
 
@@ -38,9 +35,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
 			].join("; "),
 		);
 	}
-
-	// Clear env to prevent cross-request leakage
-	clearRuntimeEnv();
 
 	return response;
 });

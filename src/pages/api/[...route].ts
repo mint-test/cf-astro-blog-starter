@@ -1,8 +1,9 @@
 import type { APIRoute } from "astro";
 import { app } from "@/admin/app";
+import { getRuntimeEnv } from "@/lib/runtime-context";
 
 export const ALL: APIRoute = async (context) => {
-	const { env } = context.locals.runtime;
+	const env = await getRuntimeEnv();
 
 	// Strip /api prefix since Hono routes are mounted relative
 	const url = new URL(context.request.url);

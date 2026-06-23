@@ -17,7 +17,7 @@ export function d1PostsLoader(): Loader {
 		name: "d1-posts",
 		load: async ({ store, logger, parseData, generateDigest }) => {
 			try {
-				const env = getRuntimeEnv();
+				const env = await getRuntimeEnv();
 
 				// During astro check / astro build, Cloudflare bindings are not available.
 				// Return empty store gracefully — actual data loads on each SSR request.

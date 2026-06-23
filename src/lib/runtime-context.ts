@@ -1,31 +1,38 @@
-import type { Env } from "@/lib/types";
-
-let currentEnv: Env | null = null;
-
 /**
- * Set the runtime environment for the current request.
- * Called by Astro middleware at the start of each request.
- * Safe in Cloudflare Workers — one request per isolate.
+ * Astro 6 + @astrojs/cloudflare v13: the old context.locals.runtime.env has been removed.
+ *
+ * Use `cloudflare:workers` import — it's request-scoped in the V8 isolate model.
+ * During astro build / astro dev startup, this module is not available, so we
+ * fall back to null gracefully (content loader will skip loading).
  */
-export function setRuntimeEnv(env: Env): void {
-	currentEnv = env;
+
+let cachedEnv: Record<string, unknown> | null = null;
+let envPromise: Promise<Record<string, unknown>> | null = null;
+
+async function loadEnv(): Promise<Record<string, unknown> | null> {
+	try {
+		// Dynamic import — only resolves at request time in CF Workers runtime
+		const mod = await import("cloudflare:workers");
+		return (mod as { env: Record<string, unknown> }).env ?? null;
+	} catch {
+		return null;
+	}
 }
 
-/**
- * Get the runtime environment for the current request.
- * Used by the D1 content loader to access Cloudflare bindings.
- * Returns null instead of throwing when called outside of a request context
- * (e.g., during astro check, astro build, or content syncing).
- */
-export function getRuntimeEnv(): Env | null {
-	return currentEnv;
+/** Get Cloudflare Worker bindings (DB, R2, KV, secrets, etc.) for the current request. */
+export async function getRuntimeEnv(): Promise<Record<string, unknown> | null> {
+	// Cache the promise so we only attempt the import once per request
+	if (!envPromise) {
+		envPromise = loadEnv();
+	}
+	return envPromise.then((env) => {
+		if (env) cachedEnv = env;
+		return env;
+	});
 }
 
-/**
- * Clear the runtime environment after a request completes.
- * Prevents cross-request environment leakage when the next request
- * on the same isolate fails to set its own env.
- */
+/** Reset the env cache — call at start of each request for fresh bindings */
 export function clearRuntimeEnv(): void {
-	currentEnv = null;
+	envPromise = null;
+	cachedEnv = null;
 }
