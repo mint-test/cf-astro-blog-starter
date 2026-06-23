@@ -12,7 +12,7 @@ export const siteConfig: SiteConfig = {
 	subtitle: "Powered by Astro + Cloudflare Workers",
 
 	// 站点 URL
-	site_url: "https://cf-astro-blog-starter.h1n054ur.dev",
+	site_url: "https://icemint.cc.cd",
 
 	// 站点描述
 	description:

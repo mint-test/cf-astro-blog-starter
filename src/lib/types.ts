@@ -8,7 +8,7 @@ export interface SiteConfig {
 
 export const siteConfig: SiteConfig = {
 	name: "CF Astro Blog",
-	url: "https://cf-astro-blog-starter.h1n054ur.dev",
+	url: "https://icemint.cc.cd",
 	description: "A blog powered by Astro + Hono on Cloudflare Workers",
 	author: "Admin",
 	language: "zh_CN",
