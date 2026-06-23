@@ -11,7 +11,7 @@ export const siteConfig: SiteConfig = {
 	url: "https://cf-astro-blog-starter.h1n054ur.dev",
 	description: "A blog powered by Astro + Hono on Cloudflare Workers",
 	author: "Admin",
-	language: "en",
+	language: "zh_CN",
 };
 
 export interface PaginationParams {
@@ -28,3 +28,24 @@ export interface PaginatedResponse<T> {
 }
 
 export type PostStatus = "draft" | "published" | "scheduled";
+
+// Cloudflare Worker environment type — re-exported from env.d.ts
+// Used by runtime-context.ts for request-scoped binding propagation
+export interface Env {
+	DB: D1Database;
+	MEDIA_BUCKET: R2Bucket;
+	SESSION: KVNamespace;
+	ASSETS: Fetcher;
+
+	SITE_NAME: string;
+	SITE_URL: string;
+	TURNSTILE_SITE_KEY: string;
+
+	JWT_SECRET: string;
+	ADMIN_USERNAME: string;
+	ADMIN_PASSWORD_HASH: string;
+	TURNSTILE_SECRET_KEY: string;
+
+	GITHUB_OAUTH_CLIENT_ID: string;
+	GITHUB_OAUTH_CLIENT_SECRET: string;
+}

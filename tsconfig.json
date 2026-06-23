@@ -1,12 +1,28 @@
 {
 	"extends": "astro/tsconfigs/strict",
 	"compilerOptions": {
+		"target": "ESNext",
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"strictNullChecks": true,
+		"allowJs": false,
 		"baseUrl": ".",
 		"paths": {
-			"@/*": ["src/*"]
+			"@components/*": ["./src/components/*"],
+			"@assets/*": ["./src/assets/*"],
+			"@constants/*": ["./src/constants/*"],
+			"@utils/*": ["./src/utils/*"],
+			"@i18n/*": ["./src/i18n/*"],
+			"@layouts/*": ["./src/layouts/*"],
+			"@/*": ["./src/*"]
 		},
-		"types": ["@cloudflare/workers-types"]
+		"types": ["@cloudflare/workers-types"],
+		"plugins": [
+			{
+				"name": "@astrojs/ts-plugin"
+			}
+		]
 	},
-	"include": ["src", "tests", "env.d.ts"],
+	"include": [".astro/types.d.ts", "src", "tests", "env.d.ts"],
 	"exclude": ["node_modules", "dist", ".astro"]
 }

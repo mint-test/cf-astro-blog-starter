@@ -1,6 +1,5 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"main": "dist/_worker.js/index.js",
 	"name": "cf-astro-blog-starter",
 	"compatibility_date": "2026-02-10",
 	"compatibility_flags": ["nodejs_compat"],
@@ -48,4 +47,8 @@
 	// ADMIN_USERNAME
 	// ADMIN_PASSWORD_HASH
 	// TURNSTILE_SECRET_KEY
+	//
+	// GitHub OAuth (set via `wrangler secret put`):
+	// GITHUB_OAUTH_CLIENT_ID
+	// GITHUB_OAUTH_CLIENT_SECRET
 }

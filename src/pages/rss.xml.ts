@@ -1,68 +1,61 @@
-import type { APIRoute } from "astro";
-import { desc, eq } from "drizzle-orm";
-import { blogPosts } from "@/db/schema";
-import { getDb } from "@/lib/db";
-import { siteConfig } from "@/lib/types";
+import { render } from "astro:content";
+// TODO: Re-add MDX renderer when @astrojs/mdx WASM deps are resolved
+import rss, { type RSSFeedItem } from "@astrojs/rss";
+import I18nKey from "@i18n/i18nKey";
+import { i18n } from "@i18n/translation";
+import { getSortedPosts } from "@utils/content-utils";
+import { formatDateI18nWithTime } from "@utils/date-utils";
+import { url } from "@utils/url-utils";
+import type { APIContext } from "astro";
+import { experimental_AstroContainer as AstroContainer } from "astro/container";
+import sanitizeHtml from "sanitize-html";
+import { siteConfig } from "@/config";
+import pkg from "../../package.json";
 
-export const GET: APIRoute = async (context) => {
-	let posts: Array<{
-		title: string;
-		slug: string;
-		excerpt: string | null;
-		publishedAt: string | null;
-		content: string;
-	}> = [];
+function stripInvalidXmlChars(str: string): string {
+	return str.replace(
+		// biome-ignore lint/suspicious/noControlCharactersInRegex: https://www.w3.org/TR/xml/#charsets
+		/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F﷐-﷯￾￿]/g,
+		"",
+	);
+}
 
-	try {
-		const { env } = context.locals.runtime;
-		const db = getDb(env.DB);
-
-		posts = await db
-			.select({
-				title: blogPosts.title,
-				slug: blogPosts.slug,
-				excerpt: blogPosts.excerpt,
-				publishedAt: blogPosts.publishedAt,
-				content: blogPosts.content,
-			})
-			.from(blogPosts)
-			.where(eq(blogPosts.status, "published"))
-			.orderBy(desc(blogPosts.publishedAt))
-			.limit(20);
-	} catch {
-		// D1 not bound
+export async function GET(context: APIContext) {
+	const blog = await getSortedPosts();
+	const container = await AstroContainer.create();
+	const feedItems: RSSFeedItem[] = [];
+	for (const post of blog) {
+		if (post.data.password) {
+			feedItems.push({
+				title: post.data.title,
+				pubDate: post.data.published,
+				description: post.data.description || "",
+				link: url(`/posts/${post.id}/`),
+				content: i18n(I18nKey.passwordProtectedRss),
+			});
+			continue;
+		}
+		const { Content } = await render(post);
+		const rawContent = await container.renderToString(Content);
+		const cleanedContent = stripInvalidXmlChars(rawContent);
+		feedItems.push({
+			title: post.data.title,
+			pubDate: post.data.published,
+			description: post.data.description || "",
+			link: url(`/posts/${post.id}/`),
+			content: sanitizeHtml(cleanedContent, {
+				allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img"]),
+			}),
+		});
 	}
-
-	const items = posts
-		.map(
-			(post) => `
-		<item>
-			<title><![CDATA[${post.title}]]></title>
-			<link>${siteConfig.url}/blog/${post.slug}</link>
-			<guid isPermaLink="true">${siteConfig.url}/blog/${post.slug}</guid>
-			<description><![CDATA[${post.excerpt || ""}]]></description>
-			${post.publishedAt ? `<pubDate>${new Date(post.publishedAt).toUTCString()}</pubDate>` : ""}
-		</item>`,
-		)
-		.join("\n");
-
-	const rss = `<?xml version="1.0" encoding="UTF-8"?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
-	<channel>
-		<title>${siteConfig.name}</title>
-		<description>${siteConfig.description}</description>
-		<link>${siteConfig.url}</link>
-		<atom:link href="${siteConfig.url}/rss.xml" rel="self" type="application/rss+xml"/>
-		<language>${siteConfig.language}</language>
-		<lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
-		${items}
-	</channel>
-</rss>`;
-
-	return new Response(rss.trim(), {
-		headers: {
-			"Content-Type": "application/xml; charset=utf-8",
-			"Cache-Control": "public, max-age=3600",
-		},
+	return rss({
+		title: siteConfig.title,
+		description: siteConfig.subtitle || "No description",
+		site: context.site ?? "https://cf-astro-blog-starter.h1n054ur.dev",
+		customData: `<templateTheme>Firefly</templateTheme>
+		<templateThemeVersion>${pkg.version}</templateThemeVersion>
+		<templateThemeUrl>https://github.com/CuteLeaf/Firefly</templateThemeUrl>
+		<lastBuildDate>${formatDateI18nWithTime(new Date())}</lastBuildDate>`,
+		items: feedItems,
 	});
-};
+}

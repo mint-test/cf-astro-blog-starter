@@ -1,0 +1,82 @@
+---
+import Pagination from "@/components/common/Pagination.astro";
+import PostPage from "@/components/layout/PostPage.astro";
+import { siteConfig } from "@/config";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { getSortedPosts } from "@/utils/content-utils";
+
+// SSR mode — manual pagination from URL params (no getStaticPaths)
+const allBlogPosts = await getSortedPosts();
+const pageSize = siteConfig.pagination.postsPerPage;
+const currentPage = Number(Astro.params.page) || 1;
+const total = allBlogPosts.length;
+const lastPage = Math.max(1, Math.ceil(total / pageSize));
+// Clamp to valid range
+const pageNum = Math.max(1, Math.min(currentPage, lastPage));
+const start = (pageNum - 1) * pageSize;
+const pageData = allBlogPosts.slice(start, start + pageSize);
+
+// Build page-like object for the Pagination component
+const page = {
+	data: pageData,
+	currentPage: pageNum,
+	lastPage,
+	total,
+	size: pageSize,
+	url: {
+		current: pageNum === 1 ? "/" : `/${pageNum}/`,
+		next: pageNum < lastPage ? `/${pageNum + 1}/` : undefined,
+		prev: pageNum > 2 ? `/${pageNum - 1}/` : pageNum === 2 ? "/" : undefined,
+	},
+};
+
+const len = page.data.length;
+---
+
+<MainGridLayout>
+  <PostPage page={page} />
+  {
+    page.total > page.size && (
+      <Pagination
+        class="mx-auto onload-animation"
+        page={page}
+        style={`animation-delay: calc(var(--content-delay) + ${len * 50}ms)`}
+      />
+    )
+  }
+</MainGridLayout>
+
+<script>
+  // Responsive pagination handling
+  document.addEventListener("DOMContentLoaded", function () {
+    const responsiveEnabled = true;
+    if (responsiveEnabled) {
+      const deviceType = getDeviceType();
+      document.body.classList.add(`device-${deviceType}`);
+
+      let resizeTimeout: any;
+      window.addEventListener("resize", function () {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(function () {
+          const newDeviceType = getDeviceType();
+          const currentDeviceType = document.body.className.match(
+            /device-(mobile|tablet|desktop)/
+          )?.[1];
+
+          if (currentDeviceType !== newDeviceType) {
+            document.body.classList.remove(`device-${currentDeviceType}`);
+            document.body.classList.add(`device-${newDeviceType}`);
+          }
+        }, 250);
+      });
+    }
+  });
+
+  function getDeviceType() {
+    if (typeof window === "undefined") return "desktop";
+    const width = window.innerWidth;
+    if (width < 768) return "mobile";
+    if (width < 1024) return "tablet";
+    return "desktop";
+  }
+</script>

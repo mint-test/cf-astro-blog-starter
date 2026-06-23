@@ -1,81 +1,156 @@
 ---
-import { desc, eq, like, or } from "drizzle-orm";
-import Base from "@/layouts/Base.astro";
-import Search from "@/components/Search.astro";
-import PostCard from "@/components/PostCard.astro";
-import { blogCategories, blogPosts } from "@/db/schema";
+import { Icon } from "astro-icon/components";
+import I18nKey from "@i18n/i18nKey";
+import { i18n } from "@i18n/translation";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { getDb } from "@/lib/db";
+import { getRuntimeEnv } from "@/lib/runtime-context";
+import { getPostUrlBySlug, url } from "@/utils/url-utils";
+import dayjs from "dayjs";
 
-const query = Astro.url.searchParams.get("q")?.trim() || "";
+const title = i18n(I18nKey.search);
+const description = "";
 
+// Server-side search via D1
+const query = (Astro.url.searchParams.get("q") || "").trim();
 let results: Array<{
-	title: string;
 	slug: string;
+	title: string;
 	excerpt: string | null;
 	publishedAt: string | null;
-	authorName: string | null;
-	categoryName: string | null;
 }> = [];
+let searched = false;
 
 if (query) {
 	try {
-		const { env } = Astro.locals.runtime;
-		const db = getDb(env.DB);
-		const pattern = `%${query}%`;
-
-		results = await db
-			.select({
-				title: blogPosts.title,
-				slug: blogPosts.slug,
-				excerpt: blogPosts.excerpt,
-				publishedAt: blogPosts.publishedAt,
-				authorName: blogPosts.authorName,
-				categoryName: blogCategories.name,
-			})
-			.from(blogPosts)
-			.leftJoin(blogCategories, eq(blogPosts.categoryId, blogCategories.id))
-			.where(
-				or(
-					like(blogPosts.title, pattern),
-					like(blogPosts.content, pattern),
-					like(blogPosts.excerpt, pattern),
-				),
-			)
-			.orderBy(desc(blogPosts.publishedAt))
-			.limit(20);
+		const env = getRuntimeEnv();
+		if (env?.DB) {
+			const db = getDb(env.DB);
+			// Escape LIKE wildcards in user input before wrapping
+				const escaped = query.replace(/%/g, "\\%").replace(/_/g, "\\_");
+				const pattern = `%${escaped}%`;
+			const rows = await db.query.blogPosts.findMany({
+				where: (posts, { eq, or, like, and }) =>
+					and(
+						eq(posts.status, "published"),
+						or(
+							like(posts.title, pattern),
+							like(posts.content, pattern),
+							like(posts.excerpt, pattern),
+						),
+					),
+				orderBy: (posts, { desc }) => [desc(posts.publishedAt)],
+				limit: 20,
+			});
+			results = rows.map((r) => ({
+				slug: r.slug,
+				title: r.title,
+				excerpt: r.excerpt,
+				publishedAt: r.publishedAt,
+			}));
+		}
 	} catch {
-		// D1 not bound
+		// D1 unavailable
 	}
+	searched = true;
 }
 ---
 
-<Base title="Search" description="Search blog posts">
-	<h1 style="font-size: var(--font-size-3xl); margin-bottom: var(--space-lg);">Search</h1>
+<MainGridLayout title={title} description={description}>
+  <div class="min-h-[80vh]">
+    <!-- Search form -->
+    <div class="card-base p-6 mb-6">
+      <form action={url("/search/")} method="get" class="flex gap-3">
+        <div class="flex-1 relative">
+          <input
+            type="text"
+            name="q"
+            value={query}
+            placeholder={i18n(I18nKey.search)}
+            class="w-full h-11 px-4 pr-10 rounded-xl border border-(--line-divider) bg-(--card-bg) text-black/80 dark:text-white/80 focus:outline-none focus:border-(--primary) transition"
+          />
+          {
+            query && (
+              <a
+                href={url("/search/")}
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-black/30 dark:text-white/30 hover:text-black/60 dark:hover:text-white/60"
+              >
+                <Icon is:inline name="material-symbols:close-rounded" class="text-xl" />
+              </a>
+            )
+          }
+        </div>
+        <button
+          type="submit"
+          class="h-11 px-6 rounded-xl bg-(--primary) text-white dark:text-black/80 font-medium hover:opacity-90 transition active:scale-95 flex items-center gap-2"
+        >
+          <Icon is:inline name="material-symbols:search-rounded" class="text-xl" />
+          <span class="hidden sm:inline">{i18n(I18nKey.search)}</span>
+        </button>
+      </form>
+    </div>
 
-	<Search />
+    <!-- Search results -->
+    {
+      searched && query && (
+        <div>
+          <div class="text-sm text-black/50 dark:text-white/50 mb-4">
+            {results.length} {i18n(I18nKey.postsCount)}
+          </div>
 
-	{query && (
-		<div style="margin-top: var(--space-xl);">
-			<p style="color: var(--color-text-muted); margin-bottom: var(--space-lg);">
-				{results.length > 0
-					? `Found ${results.length} result${results.length === 1 ? "" : "s"} for "${query}"`
-					: `No results found for "${query}"`}
-			</p>
+          {
+            results.length === 0 ? (
+              <div class="card-base p-12 text-center">
+                <Icon is:inline
+                  name="material-symbols:search-off-rounded"
+                  class="text-5xl text-black/20 dark:text-white/20 mb-4 mx-auto"
+                />
+                <p class="text-black/40 dark:text-white/40 text-lg">
+                  {i18n(I18nKey.searchEmpty)}
+                </p>
+              </div>
+            ) : (
+              <div class="flex flex-col gap-3">
+                {results.map((post) => (
+                  <a
+                    href={getPostUrlBySlug(post.slug)}
+                    class="card-base p-5 hover:border-(--primary) transition-all active:scale-[0.98]"
+                  >
+                    <h3 class="text-lg font-semibold text-black/80 dark:text-white/80 mb-1">
+                      {post.title}
+                    </h3>
+                    {post.excerpt && (
+                      <p class="text-sm text-black/40 dark:text-white/40 line-clamp-2 mb-2">
+                        {post.excerpt}
+                      </p>
+                    )}
+                    {post.publishedAt && (
+                      <span class="text-xs text-black/30 dark:text-white/30">
+                        {dayjs(post.publishedAt).format("YYYY-MM-DD")}
+                      </span>
+                    )}
+                  </a>
+                ))}
+              </div>
+            )
+          }
+        </div>
+      )
+    }
 
-			{results.length > 0 && (
-				<div style="display: grid; gap: var(--space-lg);">
-					{results.map((post) => (
-						<PostCard
-							title={post.title}
-							slug={post.slug}
-							excerpt={post.excerpt}
-							publishedAt={post.publishedAt}
-							authorName={post.authorName}
-							categoryName={post.categoryName}
-						/>
-					))}
-				</div>
-			)}
-		</div>
-	)}
-</Base>
+    <!-- No search yet -->
+    {
+      !searched && (
+        <div class="card-base p-12 text-center">
+          <Icon is:inline
+            name="material-symbols:search-rounded"
+            class="text-5xl text-black/10 dark:text-white/10 mb-4 mx-auto"
+          />
+          <p class="text-black/30 dark:text-white/30 text-lg">
+            {i18n(I18nKey.search)}
+          </p>
+        </div>
+      )
+    }
+  </div>
+</MainGridLayout>
