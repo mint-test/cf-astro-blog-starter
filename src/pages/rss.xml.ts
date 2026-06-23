@@ -8,16 +8,20 @@ import { formatDateI18nWithTime } from "@utils/date-utils";
 import { url } from "@utils/url-utils";
 import type { APIContext } from "astro";
 import { experimental_AstroContainer as AstroContainer } from "astro/container";
-import sanitizeHtml from "sanitize-html";
 import { siteConfig } from "@/config";
 import pkg from "../../package.json";
 
 function stripInvalidXmlChars(str: string): string {
 	return str.replace(
 		// biome-ignore lint/suspicious/noControlCharactersInRegex: https://www.w3.org/TR/xml/#charsets
-		/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F﷐-﷯￾￿]/g,
+		/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F\u{FDD0}-\u{FDEF}\u{FFFE}\u{FFFF}]/gu,
 		"",
 	);
+}
+
+/** Strip HTML tags for safe RSS content (avoids pulling in sanitize-html). */
+function stripHtml(html: string): string {
+	return html.replace(/<[^>]*>/g, "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 export async function GET(context: APIContext) {
@@ -43,9 +47,7 @@ export async function GET(context: APIContext) {
 			pubDate: post.data.published,
 			description: post.data.description || "",
 			link: url(`/posts/${post.id}/`),
-			content: sanitizeHtml(cleanedContent, {
-				allowedTags: sanitizeHtml.defaults.allowedTags.concat(["img"]),
-			}),
+			content: stripHtml(cleanedContent),
 		});
 	}
 	return rss({

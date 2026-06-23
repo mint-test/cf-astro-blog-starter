@@ -96,24 +96,61 @@ export default defineConfig({
 		}),
 		icon({
 			include: {
-				"material-symbols": ["*"],
-				"fa7-brands": ["*"],
-				"fa7-regular": ["*"],
-				"fa7-solid": ["*"],
-				"simple-icons": ["*"],
-				mdi: ["*"],
-				mingcute: ["*"],
+				"material-symbols": [
+					"admin-panel-settings", "archive", "arrow-back", "arrow-outward-rounded",
+					"article", "article-outline", "book-2-outline-rounded", "build-outline",
+					"calendar-clock-outline", "calendar-month-outline-rounded", "calendar-today",
+					"calendar-today-outline-rounded", "chat", "chevron-left-rounded",
+					"chevron-right-rounded", "close", "close-rounded", "cloud-outline",
+					"computer-outline", "copyright-outline", "docs", "edit-calendar-outline-rounded",
+					"emoji-people-rounded", "error-outline", "favorite", "folder-off", "folder-open",
+					"folder-open-rounded", "folder-outline", "group", "group-off-outline",
+					"help-outline", "history-rounded", "home", "home-outline-rounded",
+					"home-pin-outline", "info", "info-outline", "ink-pen-outline-rounded",
+					"keyboard-arrow-down-rounded", "keyboard-arrow-up-rounded", "label-off", "label-outline",
+					"language", "link", "location-on", "lock-outline", "menu-rounded",
+					"more-horiz", "movie", "music-note-rounded", "notes-rounded",
+					"palette-outline", "pause-rounded", "person", "photo-library-rounded", "pinboard",
+					"play-arrow-rounded", "recommend", "repeat-one-rounded", "repeat-rounded",
+					"rocket-launch-outline", "rss-feed", "schedule-outline-rounded", "search",
+					"search-off", "search-off-rounded", "search-rounded", "sentiment-sad",
+					"settings", "shield-lock", "shuffle-rounded", "signpost",
+					"skip-next-rounded", "skip-previous-rounded", "subtitles-off-outline-rounded",
+					"subtitles-outline-rounded", "sync-rounded", "tag-rounded",
+					"text-ad-outline-rounded", "update-rounded", "visibility-outline-rounded",
+				],
+				"fa7-solid": [
+					"arrow-right", "arrow-rotate-left", "arrow-up-right-from-square",
+					"chevron-left", "chevron-right", "envelope", "rss", "xmark",
+				],
+				"fa7-brands": [
+					"alipay", "creative-commons", "gitee", "github", "node-js", "qq", "weixin",
+				],
+				"fa7-regular": ["address-card"],
+				"mdi": ["arrow-up", "bed", "clover", "github", "home", "playlist-music", "swap-horizontal"],
+				"simple-icons": ["afdian", "kofi", "pnpm"],
+				mingcute: ["comment-line", "heartbeat-line"],
 			},
 		}),
 		expressiveCode({
+			shiki: {
+				engine: "javascript",
+				bundledLangs: [
+					"typescript", "javascript", "python", "bash", "shell", "sh",
+					"css", "html", "json", "yaml", "markdown", "mdx",
+					"jsx", "tsx", "sql", "rust", "go", "java", "c",
+					"toml", "xml", "diff", "dockerfile", "nginx", "plaintext",
+					"powershell", "regexp", "scss", "less", "stylus",
+				],
+			},
 			themes: [expressiveCodeConfig.darkTheme, expressiveCodeConfig.lightTheme],
 			useDarkModeMediaQuery: false,
 			themeCssSelector: (theme) => `[data-theme='${theme.name}']`,
-plugins: [
-					// TODO: Re-add pluginLanguageBadge and pluginCollapsible when WASM native deps are resolved (satteri, @napi-rs/wasm-runtime)
-					pluginCollapsibleSections(),
-					pluginLineNumbers(),
-				],
+			plugins: [
+				// TODO: Re-add pluginLanguageBadge and pluginCollapsible when WASM native deps are resolved (satteri, @napi-rs/wasm-runtime)
+				pluginCollapsibleSections(),
+				pluginLineNumbers(),
+			],
 			defaultProps: {
 				wrap: false,
 				overridesByLang: {

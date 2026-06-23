@@ -181,7 +181,7 @@ export const LinkPresets: Record<string, NavBarLink> = {
 	Gallery: {
 		name: "相册",
 		url: "/gallery/",
-		icon: "material-symbols:photo-library",
+		icon: "material-symbols:photo-library-rounded",
 		pageKey: "gallery",
 	},
 };
